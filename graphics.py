@@ -1,5 +1,6 @@
 import Tkinter
 import obj_handler
+import time
 
 BLACK = (0, 0, 0)
 RED   = (255, 0, 0)
@@ -18,21 +19,10 @@ class MyCanvas(object):
 
         self.WIDTH = window_width
         self.HEIGHT = window_height
-
+        
         self.image = Tkinter.PhotoImage(width=self.WIDTH, height=self.HEIGHT)
-
-        x = 0
-        y = 0
-        while True:
-            self.put_to_image(x, y, BLACK)
-            x += 1
-            if x == self.WIDTH:
-                x = 0
-                y += 1
-            if y == self.HEIGHT:
-                break
-
-
+        self.image.put((self.C_PATTERN % BLACK), (0, 0, self.WIDTH - 1, self.HEIGHT - 1))
+        
         canvas = Tkinter.Canvas(root, width=self.WIDTH, height=self.HEIGHT)
         canvas.pack()
         canvas.create_image(0, 0, image=self.image, anchor=Tkinter.NW)
@@ -93,10 +83,9 @@ if __name__ == "__main__":
 
     size_x = 1024
     size_y = 1024
-    center_x = 1.0 * (size_x) / 2
-    center_y = 1.0 * (size_y) / 2
+    center_x = 1.0 * (size_x) / 4
+    center_y = 1.0 * (size_y) / 4
     canvas = MyCanvas(root, size_x + 1, size_y + 1)
-    
     for face in model.get_faces():
         for i in xrange(3):
             vert0 = model.get_vertices()[int(face[i][0]) - 1]
@@ -108,7 +97,7 @@ if __name__ == "__main__":
             x1 = int((vert1[0] + 1) * center_x)
             y1 = int((vert1[1] + 1) * center_y)
             
-            canvas.simple_line(x0, y0, x1, y1, WHITE)
+            canvas.simple_line(int(center_x) + x0,int(center_y) + y0, int(center_x) + x1,int(center_y) +  y1, WHITE)
 
     #canvas.simple_line(13, 20, 80, 40, WHITE)
     #canvas.simple_line(20, 13, 40, 80, RED)

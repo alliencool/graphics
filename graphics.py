@@ -21,19 +21,29 @@ class MyCanvas(object):
         self.HEIGHT = window_height
         
         self.image = Tkinter.PhotoImage(width=self.WIDTH, height=self.HEIGHT)
-        self.image.put((self.C_PATTERN % BLACK), (0, 0, self.WIDTH - 1, self.HEIGHT - 1))
+        
+        black_str = self.C_PATTERN % BLACK
+        self.image_data = [[black_str for i in xrange(self.WIDTH)] for j in xrange(self.HEIGHT)]
+
+        self.image.put((self.C_PATTERN % BLACK), (0, 0, self.WIDTH, self.HEIGHT))
         
         canvas = Tkinter.Canvas(root, width=self.WIDTH, height=self.HEIGHT)
         canvas.pack()
         canvas.create_image(0, 0, image=self.image, anchor=Tkinter.NW)
 
+    def _data_conv(self):
+        return tuple([tuple(row) for row in self.image_data])
+    
     def put_to_image(self, x, y, c_tuple):
         if x < 0 or x >= self.WIDTH or y < 0 or y >= self.HEIGHT:
             raise GraphicsException("Coordinate does not fit into the canvas sizes.")
-       
-        self.image.put(self.C_PATTERN % c_tuple, (x, self.HEIGHT - y))
+        
+        self.image_data[self.HEIGHT - y][x] = self.C_PATTERN % c_tuple
 
-    def simple_line(self, x0, y0, x1, y1, color):
+    def refresh_image(self):
+        self.image.put(self._data_conv())
+
+    def line(self, x0, y0, x1, y1, color):
         '''
         Bresenham algorithm for drawing a line
         '''
@@ -65,44 +75,54 @@ class MyCanvas(object):
         
         for x in xrange(x0, x1 + 1):
             if steep:
-                self.put_to_image(int(y), int(x), color)
+                self.put_to_image(y, x, color)
             else:
-                self.put_to_image(int(x), int(y), color)
+                self.put_to_image(x, y, color)
             
             error += factor
             if error > dx:
                 y += add
                 error -= dx2
 
+
+def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
+   
+    shift_x = int(shift_x)
+    shift_y = int(shift_y)
+    
+    for face in model.get_faces():
+        coords = []
+        for i in xrange(3):
+            vert = model.get_vertices()[int(face[i][0]) - 1]
+   
+            x = int((vert[0] + 1) * center_x)
+            y = int((vert[1] + 1) * center_y)
+
+            coords.append((x + shift_x, y + shift_y))
+        
+        for i in xrange(3):
+            j = (i + 1) % 3
+            canvas.line(coords[i][0], coords[i][1], coords[j][0], coords[j][1], WHITE)
+
+
 if __name__ == "__main__":
     
     root = Tkinter.Tk()
-    
-    obj_parser = obj_handler.ObjParser()
-    model = obj_parser.parse("african_head.obj.txt")
 
     size_x = 1024
     size_y = 1024
     center_x = 1.0 * (size_x) / 4
     center_y = 1.0 * (size_y) / 4
     canvas = MyCanvas(root, size_x + 1, size_y + 1)
-    for face in model.get_faces():
-        for i in xrange(3):
-            vert0 = model.get_vertices()[int(face[i][0]) - 1]
-            vert1 = model.get_vertices()[int(face[(i + 1) % 3][0]) - 1]
-   
-            x0 = int((vert0[0] + 1) * center_x)
-            y0 = int((vert0[1] + 1) * center_y)
     
-            x1 = int((vert1[0] + 1) * center_x)
-            y1 = int((vert1[1] + 1) * center_y)
-            
-            canvas.simple_line(int(center_x) + x0,int(center_y) + y0, int(center_x) + x1,int(center_y) +  y1, WHITE)
+    obj_parser = obj_handler.ObjParser()
+    model = obj_parser.parse("african_head.obj.txt")
+    first_lesson(canvas, model, center_x, center_y, center_x, center_y)
 
-    #canvas.simple_line(13, 20, 80, 40, WHITE)
-    #canvas.simple_line(20, 13, 40, 80, RED)
-    #canvas.simple_line(80, 40, 13, 20, GREEN)
-    
+    #canvas.line(13, 20, 80, 40, WHITE)
+    #canvas.line(20, 13, 40, 80, RED)
+    #canvas.line(80, 40, 13, 20, GREEN)
+    canvas.refresh_image()    
     root.mainloop()
     #root.destroy()
 

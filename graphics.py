@@ -1,6 +1,9 @@
-import Tkinter
 import obj_handler
+from Vector import Vector3D
+
+import random
 import time
+import Tkinter
 
 BLACK = (0, 0, 0)
 RED   = (255, 0, 0)
@@ -85,6 +88,42 @@ class MyCanvas(object):
                 error -= dx2
 
 
+    def triangle(self, coord0, coord1, coord2, c_tuple):
+
+        if coord0[1] < coord1[1]:
+            coord0, coord1 = coord1, coord0
+        if coord0[1] < coord2[1]:
+            coord0, coord2 = coord2, coord0
+        if coord1[1] < coord2[1]:
+            coord1, coord2 = coord2, coord1
+
+        factor10 = factor02 = factor12 = 1
+
+        if coord0[1] != coord2[1]:
+            factor02 = 1.0 * (coord2[0] - coord0[0]) / (coord2[1] - coord0[1])
+        
+        if coord0[1] != coord1[1]:
+            factor10 = 1.0 * (coord0[0] - coord1[0]) / (coord0[1] - coord1[1])
+        
+        if coord1[1] != coord2[1]: 
+            factor12 = 1.0 * (coord1[0] - coord2[0]) / (coord1[1] - coord2[1])
+        
+        step = -1
+        if (factor02 * (coord1[1] - coord0[1]) + coord0[0]) > coord1[0]:
+            step = 1
+
+        for y in xrange(coord1[1], coord0[1] + 1):
+            x_f = factor10 * (y - coord1[1]) + coord1[0]
+            x_s = factor02 * (y - coord0[1]) + coord0[0]
+            for x in xrange(int(x_f), int(x_s) + step, step):
+                self.put_to_image(x, y, c_tuple)
+        
+        for y in xrange(coord2[1], coord1[1] + 1):
+            x_f = factor12 * (y - coord1[1]) + coord1[0]
+            x_s = factor02 * (y - coord0[1]) + coord0[0]
+            for x in xrange(int(x_f), int(x_s) + step, step):
+                self.put_to_image(x, y, c_tuple)
+
 def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
    
     shift_x = int(shift_x)
@@ -105,24 +144,54 @@ def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
             canvas.line(coords[i][0], coords[i][1], coords[j][0], coords[j][1], WHITE)
 
 
+def second_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
+
+    shift_x = int(shift_x)
+    shift_y = int(shift_y)
+
+    r_rng = lambda : random.randrange(0, 256)
+    
+    for face in model.get_faces():
+        coords = []
+        w_coords = []
+        for i in xrange(3):
+            vert = model.get_vertices()[int(face[i][0]) - 1]
+   
+            x = int((vert[0] + 1) * center_x)
+            y = int((vert[1] + 1) * center_y)
+
+            coords.append((x + shift_x, y + shift_y))
+            w_coords.append(Vector3D(vert))
+
+        color = WHITE
+        norm = (w_coords[2] - w_coords[0]) * (w_coords[1] - w_coords[0])
+        norm.normalize()
+        intensity = norm ^ Vector3D([0, 0, -1])
+        color = tuple(int(intensity * i) for i in color)
+        if intensity > 0:
+            canvas.triangle(coords[0], coords[1], coords[2], color)
+
 if __name__ == "__main__":
     
     root = Tkinter.Tk()
 
     size_x = 1024
     size_y = 1024
-    center_x = 1.0 * (size_x) / 4
-    center_y = 1.0 * (size_y) / 4
+    center_x = 1.0 * (size_x * 0.65) / 2
+    center_y = 1.0 * (size_y * 0.65) / 2
+    real_center_x = 1.0 * size_x / 2
+    real_center_y = 1.0 * size_y / 2
     canvas = MyCanvas(root, size_x + 1, size_y + 1)
     
     obj_parser = obj_handler.ObjParser()
-    model = obj_parser.parse("african_head.obj.txt")
-    first_lesson(canvas, model, center_x, center_y, center_x, center_y)
+    model = obj_parser.parse("african_head.obj")
+    second_lesson(canvas, model, center_x, center_y, int(real_center_x - center_x), int((real_center_y - center_y) * 1.3 ))
 
-    #canvas.line(13, 20, 80, 40, WHITE)
-    #canvas.line(20, 13, 40, 80, RED)
-    #canvas.line(80, 40, 13, 20, GREEN)
+
+    #canvas.triangle((10, 70), (50, 160), (70, 80), RED)
+    #canvas.triangle((180, 50), (150, 1), (70, 180), WHITE)
+    #canvas.triangle((180, 150), (120, 160), (130, 180), GREEN)
+
     canvas.refresh_image()    
     root.mainloop()
-    #root.destroy()
 

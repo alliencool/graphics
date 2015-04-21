@@ -124,6 +124,72 @@ class MyCanvas(object):
             for x in xrange(int(x_f), int(x_s) + step, step):
                 self.put_to_image(x, y, c_tuple)
 
+    def z_triangle(self, coord0, coord1, coord2, c_tuple, z_buffer):
+
+        if coord0.y < coord1.y:
+            coord0, coord1 = coord1, coord0
+        if coord0.y < coord2.y:
+            coord0, coord2 = coord2, coord0
+        if coord1.y < coord2.y:
+            coord1, coord2 = coord2, coord1
+
+        total_height = 1.0 * coord0.y - coord2.y
+        first_height = 1.0 * coord0.y - coord1.y
+
+        coord21 = coord2
+        if total_height > 0:
+            coord21 = ((coord2 - coord0) * first_height / total_height  + coord0)
+        
+        step = -1
+        if coord21.x > coord1.x:
+            step = 1
+
+        height = first_height
+        
+        if height == 0:
+            height = 1.0
+        
+        A_ = coord0 - coord1
+        B_ = coord0 - coord21
+        
+        for y in xrange(coord1.y, coord0.y + 1):
+            factor = (y - coord1.y) / height
+            A = A_ * factor + coord1
+            B = B_ * factor + coord21
+
+            C_ = B - A
+            width = (B.x - A.x) 
+            if width == 0:
+                width = 1
+            for x in xrange(int(A.x), int(B.x) + step, step):
+                C = C_ * (x - A.x) / width + A
+                if z_buffer[x][y] < C.z:
+                    z_buffer[x][y] = C.z
+                    self.put_to_image(x, y, c_tuple)
+        
+        height = total_height - first_height
+        if height == 0:
+            height = 1.0
+        
+        A_ = coord2 - coord1
+        B_ = coord2 - coord21
+        
+        for y in xrange(coord2.y, coord1.y + 1):
+            factor = (coord1.y - y) / height
+            A = A_ * factor + coord1
+            B = B_ * factor + coord21
+            
+            C_ = B - A
+            width = (B.x - A.x) 
+            if width == 0:
+                width = 1
+
+            for x in xrange(int(A.x), int(B.x) + step, step):
+                C = C_ * (x - A.x) / width + A
+                if z_buffer[x][y] < C.z:
+                    z_buffer[x][y] = C.z
+                    self.put_to_image(x, y, c_tuple)
+        
 def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
    
     shift_x = int(shift_x)
@@ -142,7 +208,6 @@ def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
         for i in xrange(3):
             j = (i + 1) % 3
             canvas.line(coords[i][0], coords[i][1], coords[j][0], coords[j][1], WHITE)
-
 
 def second_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
 
@@ -171,6 +236,34 @@ def second_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
         if intensity > 0:
             canvas.triangle(coords[0], coords[1], coords[2], color)
 
+
+def third_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
+
+    shift_x = int(shift_x)
+    shift_y = int(shift_y)
+    
+    z_buffer = [[-1000000.0 for i in xrange(int(center_x * 3))] for j in xrange(int(center_y * 3))]
+    
+    for face in model.get_faces():
+        coords = []
+        w_coords = []
+        for i in xrange(3):
+            vert = model.get_vertices()[int(face[i][0]) - 1]
+   
+            x = int((vert[0] + 1) * center_x)
+            y = int((vert[1] + 1) * center_y)
+            z = vert[2]
+            coords.append(Vector3D([x + shift_x, y + shift_y, z]))
+            w_coords.append(Vector3D(vert))
+
+        color = WHITE
+        norm = (w_coords[2] - w_coords[0]) * (w_coords[1] - w_coords[0])
+        norm.normalize()
+        intensity = norm ^ Vector3D([0, 0, -1])
+        color = tuple(int(intensity * i) for i in color)
+        if intensity > 0:
+            canvas.z_triangle(coords[0], coords[1], coords[2], color, z_buffer)
+
 if __name__ == "__main__":
     
     root = Tkinter.Tk()
@@ -185,7 +278,7 @@ if __name__ == "__main__":
     
     obj_parser = obj_handler.ObjParser()
     model = obj_parser.parse("african_head.obj")
-    second_lesson(canvas, model, center_x, center_y, int(real_center_x - center_x), int((real_center_y - center_y) * 1.3 ))
+    third_lesson(canvas, model, center_x, center_y, int(real_center_x - center_x), int((real_center_y - center_y) * 1.3 ))
 
 
     #canvas.triangle((10, 70), (50, 160), (70, 80), RED)

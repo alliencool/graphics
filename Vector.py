@@ -3,49 +3,41 @@ import math
 class VectorException(Exception):
     pass
 
-class Vector3D(object):
+class Vector(object):
 
     def __init__(self, coords=None):
-        super(Vector3D, self).__init__()
+        super(Vector, self).__init__()
         if coords == None:
-            coords = [0, 0, 0]
-        elif len(coords) != 3:
-            raise VectorException("Vector3D is only for 3 dimensinal vectors.")
-        
-        self.coords = coords
+            coords = []
+        elif not isinstance(coords, list):
+            raise VectorException("There should be only a list in the Vector's constructor.")
 
+        self.coords = coords
 
     def __add__(self, vector):
         
         if isinstance(vector, int) or isinstance(vector, float):
-            return Vector3D([vector + i for i in self.coords])
+            return self.__class__([vector + i for i in self.coords])
 
-        if not isinstance(vector, Vector3D):
-            raise VectorException("Addition and substraction can be done only with Vector objects or numeric.")
+        if not isinstance(vector, self.__class__):
+            raise VectorException("Type of the right operand should be the same as left for Vectors.")
+        
+        if len(self.coords) != len(vector.coords):
+            raise VectorException("Dimensions of vectors should be equal")
 
-        return Vector3D([self.coords[i] + vector.coords[i] for i in xrange(len(self.coords))])
-
+        return self.__class__([self.coords[i] + vector.coords[i] for i in xrange(len(self.coords))])
+    
     def __sub__(self, vector):
         return self.__add__(vector * -1)
 
     def __xor__(self, vector):
 
-        if not isinstance(vector, Vector3D):
+        if not isinstance(vector, self.__class__):
             raise VectorException("Scalar multiplication can be done only with Vector objects.")
+        elif len(self.coords) != len(vector.coords):
+            raise VectorException("Dimensions of vectors should be equal")
 
         return sum((self.coords[i] * vector.coords[i] for i in xrange(len(self.coords))))
-
-    def __mul__(self, vector):
-
-        if isinstance(vector, int) or isinstance(vector, float):
-            return Vector3D([vector * i for i in self.coords])
-
-        if not isinstance(vector, Vector3D):
-            raise VectorException("Vector multiplication can be done only with Vector objects or numer.")
-
-        return Vector3D([self.coords[1] * vector.coords[2] - self.coords[2] * vector.coords[1],
-                         self.coords[2] * vector.coords[0] - self.coords[0] * vector.coords[2],
-                         self.coords[0] * vector.coords[1] - self.coords[1] * vector.coords[0]])
 
     def __div__(self, numeric):
 
@@ -55,7 +47,7 @@ class Vector3D(object):
         else:
             raise VectorException("Vector division can be done only with numeric.") 
 
-        return Vector3D([coord / numeric for coord in self.coords])
+        return self.__class__([coord / numeric for coord in self.coords])
 
     def __getitem__(self, index):
         if index < 0 or index > len(self.coords):
@@ -70,6 +62,29 @@ class Vector3D(object):
  
         length = math.sqrt(sum((self.coords[i] * self.coords[i] for i in xrange(len(self.coords)))))
         self.coords = [i / length for i in self.coords]
+
+
+class Vector3D(Vector):
+
+    def __init__(self, coords=None):
+        super(Vector3D, self).__init__(coords)
+    
+        if coords == None:
+            coords = [0, 0, 0]
+        elif len(coords) < 3:
+            raise VectorException("Vector3D is only for 3 dimensinal vectors.")
+        
+    def __mul__(self, vector):
+
+        if isinstance(vector, int) or isinstance(vector, float):
+            return Vector3D([vector * i for i in self.coords])
+
+        if not isinstance(vector, Vector3D):
+            raise VectorException("Vector multiplication can be done only with Vector objects or numer.")
+
+        return Vector3D([self.coords[1] * vector.coords[2] - self.coords[2] * vector.coords[1],
+                         self.coords[2] * vector.coords[0] - self.coords[0] * vector.coords[2],
+                         self.coords[0] * vector.coords[1] - self.coords[1] * vector.coords[0]])
 
     @property
     def x(self):

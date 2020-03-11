@@ -1,10 +1,10 @@
-import obj_handler
-import tga_handler
-from Vector import Vector3D, Vector
-
 import random
 import time
-import Tkinter
+import tkinter
+
+import obj_handler
+import tga_handler
+from Vector import Vector, Vector3D
 
 BLACK = (0, 0, 0)
 RED   = (255, 0, 0)
@@ -15,25 +15,29 @@ WHITE = (255, 255, 255)
 class GraphicsException(Exception):
     pass
 
-class MyCanvas(object):
+
+class MyCanvas:
 
     C_PATTERN = "#%02x%02x%02x"
     
     def __init__(self, root, window_width, window_height):
 
-        self.WIDTH = window_width
-        self.HEIGHT = window_height
+        self.width = window_width
+        self.height = window_height
         
-        self.image = Tkinter.PhotoImage(width=self.WIDTH, height=self.HEIGHT)
+        self.images = []
+        self.images.append(tkinter.PhotoImage(width=self.width, height=self.height))
+        self.images.append(tkinter.PhotoImage(width=self.width, height=self.height))
+        self.active_image = 0
         
         black_str = self.C_PATTERN % BLACK
-        self.image_data = [[black_str for i in xrange(self.WIDTH)] for j in xrange(self.HEIGHT)]
-
-        self.image.put((self.C_PATTERN % BLACK), (0, 0, self.WIDTH, self.HEIGHT))
+        self.image_data = [[black_str for i in range(self.width)] for j in range(self.height)]
         
-        canvas = Tkinter.Canvas(root, width=self.WIDTH, height=self.HEIGHT)
-        canvas.pack()
-        canvas.create_image(0, 0, image=self.image, anchor=Tkinter.NW)
+        self.images[self.active_image].put((self.C_PATTERN % BLACK), (0, 0, self.width, self.height))
+        
+        self.canvas = tkinter.Canvas(root, width=self.width, height=self.height)
+        self.canvas.pack()
+        self.image_on_canvas = self.canvas.create_image(0, 0, image=self.images[self.active_image], anchor=tkinter.NW)
 
     def _data_conv(self):
         return tuple([tuple(row) for row in self.image_data])
@@ -41,10 +45,12 @@ class MyCanvas(object):
     def put_to_image(self, x, y, c_tuple):
         if x < 0 or x >= self.WIDTH or y < 0 or y >= self.HEIGHT:
             raise GraphicsException("Coordinate does not fit into the canvas sizes.")
-        self.image_data[self.HEIGHT - y -1][x] = self.C_PATTERN % c_tuple
+        self.image_data[self.HEIGHT - y - 1][x] = self.C_PATTERN % c_tuple
 
     def refresh_image(self):
-        self.image.put(self._data_conv())
+        self.active_image = (self.active_image + 1) % 2
+        self.images[self.active_image].put(self._data_conv())
+        self.canvas.itemconfig(self.image_on_canvas, image=self.images[self.active_image])
 
     def line(self, x0, y0, x1, y1, color):
         '''
@@ -76,7 +82,7 @@ class MyCanvas(object):
         error = 0
         y = y0
         
-        for x in xrange(x0, x1 + 1):
+        for x in range(x0, x1 + 1):
             if steep:
                 self.put_to_image(y, x, color)
             else:
@@ -86,7 +92,6 @@ class MyCanvas(object):
             if error > dx:
                 y += add
                 error -= dx2
-
 
     def triangle(self, coord0, coord1, coord2, c_tuple):
 
@@ -112,21 +117,20 @@ class MyCanvas(object):
         if (factor02 * (coord1[1] - coord0[1]) + coord0[0]) > coord1[0]:
             step = 1
 
-        for y in xrange(coord1[1], coord0[1] + 1):
+        for y in range(coord1[1], coord0[1] + 1):
             x_f = factor10 * (y - coord1[1]) + coord1[0]
             x_s = factor02 * (y - coord0[1]) + coord0[0]
-            for x in xrange(int(x_f), int(x_s) + step, step):
+            for x in range(int(x_f), int(x_s) + step, step):
                 self.put_to_image(x, y, c_tuple)
         
-        for y in xrange(coord2[1], coord1[1] + 1):
+        for y in range(coord2[1], coord1[1] + 1):
             x_f = factor12 * (y - coord1[1]) + coord1[0]
             x_s = factor02 * (y - coord0[1]) + coord0[0]
-            for x in xrange(int(x_f), int(x_s) + step, step):
+            for x in range(int(x_f), int(x_s) + step, step):
                 self.put_to_image(x, y, c_tuple)
 
 
-    def z_triangle(self, coord0, coord1, coord2, tga_model, z_buffer):
-
+    def z_triangle(self, coord0, coord1, coord2, tga_model, z_buffer, intensity):
         
         if coord0.y < coord1.y:
             coord0, coord1 = coord1, coord0
@@ -163,7 +167,7 @@ class MyCanvas(object):
             A_ = altitude_point - first_base_point
             B_ = altitude_point - second_base_point
 
-            for y in xrange(first_base_point.y, altitude_point.y + step_y, step_y):
+            for y in range(first_base_point.y, altitude_point.y + step_y, step_y):
                 factor = (y - first_base_point.y) / height
                 A = A_ * factor + first_base_point
                 B = B_ * factor + second_base_point
@@ -172,11 +176,14 @@ class MyCanvas(object):
                 if width == 0:
                     width = 1
 
-                for x in xrange(int(A.x), int(B.x) + step_x, step_x):
+                for x in range(int(A.x), int(B.x) + step_x, step_x):
                     C = C_ * (x - A.x) / width + A
                     if z_buffer[x][y] < C.z:
                         z_buffer[x][y] = C.z
-                        self.put_to_image(x, y, tga_model.image[tga_model.image_width * int(C[4]) + int(C[3])])
+                        self.put_to_image(x, y, 
+                                          tuple(int(color * intensity)
+                                                for color in tga_model.image[tga_model.image_width * int(C[4]) +
+                                                                             int(C[3])]))
 
 
 def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
@@ -186,7 +193,7 @@ def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
     
     for face in model.get_faces():
         coords = []
-        for i in xrange(3):
+        for i in range(3):
             vert = model.get_vertices()[int(face[i][0]) - 1]
    
             x = int((vert[0] + 1) * center_x)
@@ -194,7 +201,7 @@ def first_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
 
             coords.append((x + shift_x, y + shift_y))
         
-        for i in xrange(3):
+        for i in range(3):
             j = (i + 1) % 3
             canvas.line(coords[i][0], coords[i][1], coords[j][0], coords[j][1], WHITE)
 
@@ -208,7 +215,7 @@ def second_lesson(canvas, model, center_x, center_y, shift_x, shift_y):
     for face in model.get_faces():
         coords = []
         w_coords = []
-        for i in xrange(3):
+        for i in range(3):
             vert = model.get_vertices()[int(face[i][0]) - 1]
    
             x = int((vert[0] + 1) * center_x)
@@ -231,12 +238,12 @@ def third_lesson(canvas, obj_model, tga_model, center_x, center_y, shift_x, shif
     shift_x = int(shift_x)
     shift_y = int(shift_y)
     
-    z_buffer = [[-1000000.0 for i in xrange(int(center_x * 3))] for j in xrange(int(center_y * 3))]
+    z_buffer = [[-1000000.0 for i in range(int(center_x * 3))] for j in range(int(center_y * 3))]
     
     for face in obj_model.get_faces():
         coords = []
         w_coords = []
-        for i in xrange(3):
+        for i in range(3):
             vert = obj_model.get_vertices()[int(face[i][0]) - 1]
             texture_vert = obj_model.get_vertex_textures()[int(face[i][1]) - 1]
    
@@ -252,36 +259,31 @@ def third_lesson(canvas, obj_model, tga_model, center_x, center_y, shift_x, shif
         intensity = norm ^ Vector3D([0, 0, -1])
         color = tuple(int(intensity * i) for i in color)
         if intensity > 0:
-            canvas.z_triangle(coords[0], coords[1], coords[2], tga_model, z_buffer)
+            canvas.z_triangle(coords[0], coords[1], coords[2], tga_model, z_buffer, intensity)
 
 if __name__ == "__main__":
     
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
 
     size_x = 1024
     size_y = 1024
-    center_x = 1.0 * (size_x * 0.65) / 2
-    center_y = 1.0 * (size_y * 0.65) / 2
-    real_center_x = 1.0 * size_x / 2
-    real_center_y = 1.0 * size_y / 2
+    center_x = (size_x * 0.65) / 2
+    center_y = (size_y * 0.65) / 2
+    real_center_x = size_x / 2
+    real_center_y = size_y / 2
     canvas = MyCanvas(root, size_x + 1, size_y + 1)
     
-    time.clock()
     obj_parser = obj_handler.ObjParser()
     obj_model = obj_parser.parse("african_head.obj")
     
     tga_parser = tga_handler.TgaParser()
     tga_model = tga_parser.parse("african_head_diffuse.tga")
     
-    third_lesson(canvas, obj_model, tga_model, center_x, center_y, int(real_center_x - center_x), int((real_center_y - center_y) * 1.3 ))
-
-    #for i in xrange(1024 * 1024):
-    #    canvas.put_to_image(i / 1024, i % 1024, tga_model.image[i])
-        
-    #canvas.triangle((10, 70), (50, 160), (70, 80), RED)
-    #canvas.triangle((180, 50), (150, 1), (70, 180), WHITE)
-    #canvas.triangle((180, 150), (120, 160), (130, 180), GREEN)
-
+    third_lesson(canvas,
+                 obj_model,
+                 tga_model,
+                 center_x, center_y,
+                 int(real_center_x - center_x), int((real_center_y - center_y) * 1.3 )
+                )
     canvas.refresh_image()   
     root.mainloop()
-

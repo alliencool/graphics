@@ -85,7 +85,7 @@ class TgaParser(object):
             image_size = tga_model.image_width * tga_model.image_height
 
             if tga_model.image_type_code == UNMAPPED_RGB:
-                for i in xrange(tga_model.image_width * tga_model.image_height):
+                for i in range(tga_model.image_width * tga_model.image_height):
                     tga_model.image.append(self._read_color(bfd, pixel_size))
             
             elif tga_model.image_type_code == RUN_LENGTH_ENCODED:
@@ -96,12 +96,12 @@ class TgaParser(object):
                     header_type = header & 128
                     header_count = (header & 127) + 1
                     if header_type == 0:
-                        for i in xrange(header_count):
+                        for i in range(header_count):
                             tga_model.image.append(self._read_color(bfd, pixel_size))
                             curr_image_size += 1
                     else:
                         color = self._read_color(bfd, pixel_size) 
-                        for i in xrange(header_count):
+                        for i in range(header_count):
                             tga_model.image.append(color)
                             curr_image_size += 1
             else:

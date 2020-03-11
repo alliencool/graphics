@@ -3,7 +3,7 @@ import math
 class VectorException(Exception):
     pass
 
-class Vector(object):
+class Vector:
 
     def __init__(self, coords=None):
         super(Vector, self).__init__()
@@ -25,7 +25,7 @@ class Vector(object):
         if len(self.coords) != len(vector.coords):
             raise VectorException("Dimensions of vectors should be equal")
 
-        return self.__class__([self.coords[i] + vector.coords[i] for i in xrange(len(self.coords))])
+        return self.__class__([self.coords[i] + vector.coords[i] for i in range(len(self.coords))])
     
     def __sub__(self, vector):
         return self.__add__(vector * -1)
@@ -37,16 +37,16 @@ class Vector(object):
         elif len(self.coords) != len(vector.coords):
             raise VectorException("Dimensions of vectors should be equal")
 
-        return sum((self.coords[i] * vector.coords[i] for i in xrange(len(self.coords))))
+        return sum((self.coords[i] * vector.coords[i] for i in range(len(self.coords))))
 
-    def __div__(self, numeric):
+    def __truediv__(self, numeric):
 
         if isinstance(numeric, int) or isinstance(numeric, float):
             if numeric == 0:
                 raise VectorException("Division by zero.")
         else:
             raise VectorException("Vector division can be done only with numeric.") 
-
+        
         return self.__class__([coord / numeric for coord in self.coords])
 
     def __getitem__(self, index):
@@ -60,7 +60,7 @@ class Vector(object):
 
     def normalize(self):
  
-        length = math.sqrt(sum((self.coords[i] * self.coords[i] for i in xrange(len(self.coords)))))
+        length = math.sqrt(sum((self.coords[i] * self.coords[i] for i in range(len(self.coords)))))
         self.coords = [i / length for i in self.coords]
 
 
@@ -110,6 +110,7 @@ class Vector3D(Vector):
     def z(self, value):
         self.coords[2] = value
 
+"""
 def check():
     v1 = Vector3D([1, 2, 3])
     v2 = Vector3D([3, 2, 1])
@@ -126,3 +127,4 @@ def check():
     v1.z = 30
     print v1.x, v1.y, v1.z
     print v1
+"""

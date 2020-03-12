@@ -4,7 +4,7 @@ import tkinter
 
 import obj_handler
 import tga_handler
-from Vector import Vector, Vector3D
+from vector import Vector, Vector3D
 
 BLACK = (0, 0, 0)
 RED   = (255, 0, 0)
@@ -43,9 +43,9 @@ class MyCanvas:
         return tuple([tuple(row) for row in self.image_data])
     
     def put_to_image(self, x, y, c_tuple):
-        if x < 0 or x >= self.WIDTH or y < 0 or y >= self.HEIGHT:
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
             raise GraphicsException("Coordinate does not fit into the canvas sizes.")
-        self.image_data[self.HEIGHT - y - 1][x] = self.C_PATTERN % c_tuple
+        self.image_data[self.height - y - 1][x] = self.C_PATTERN % c_tuple
 
     def refresh_image(self):
         self.active_image = (self.active_image + 1) % 2
@@ -56,8 +56,8 @@ class MyCanvas:
         '''
         Bresenham algorithm for drawing a line
         '''
-        if x0 < 0 or x0 >= self.WIDTH or y0 < 0 or y0 >= self.HEIGHT or\
-           x1 < 0 or x1 >= self.WIDTH or y1 < 0 or y1 >= self.HEIGHT:
+        if x0 < 0 or x0 >= self.width or y0 < 0 or y0 >= self.height or\
+           x1 < 0 or x1 >= self.width or y1 < 0 or y1 >= self.height:
             raise GraphicsException("Coordinates do not fit into the canvas sizes.")
 
         steep = False
@@ -250,7 +250,11 @@ def third_lesson(canvas, obj_model, tga_model, center_x, center_y, shift_x, shif
             x = int((vert[0] + 1) * center_x)
             y = int((vert[1] + 1) * center_y)
             z = vert[2]
-            coords.append(Vector3D([x + shift_x, y + shift_y, z, texture_vert[0] * tga_model.image_width, texture_vert[1] * tga_model.image_height]))
+            coords.append(Vector3D([x + shift_x,
+                                    y + shift_y,
+                                    z,
+                                    texture_vert[0] * tga_model.image_width,
+                                    texture_vert[1] * tga_model.image_height]))
             w_coords.append(Vector3D(vert))
 
         color = WHITE

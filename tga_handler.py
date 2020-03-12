@@ -13,10 +13,9 @@ RUN_LENGTH_ENCODED = 10
 class TgaException(Exception):
     pass
 
-class TgaModel(object):
+class TgaModel:
 
     def __init__(self):
-        super(TgaModel, self).__init__()
         
         self.image_id_length = 0
         self.image_id = "" 
@@ -36,10 +35,7 @@ class TgaModel(object):
         self.image = []
 
 
-class TgaParser(object):
-
-    def __init__(self):
-        super(TgaParser, self).__init__()
+class TgaParser:
 
     def _read_color(self, bfd, pixel_size):
         
@@ -81,7 +77,7 @@ class TgaParser(object):
             if tga_model.color_map_type != 0:
                 raise TgaException("There should not be color map!") 
 
-            pixel_size = int(tga_model.image_pixel_size / 8)
+            pixel_size = tga_model.image_pixel_size // 8
             image_size = tga_model.image_width * tga_model.image_height
 
             if tga_model.image_type_code == UNMAPPED_RGB:
@@ -109,8 +105,8 @@ class TgaParser(object):
 
         return tga_model
 
+
 def check():
     t_parser = TgaParser()
 
     t_parser.parse("african_head_diffuse.tga")
-

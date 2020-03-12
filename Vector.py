@@ -3,11 +3,11 @@ import math
 class VectorException(Exception):
     pass
 
+
 class Vector:
 
     def __init__(self, coords=None):
-        super(Vector, self).__init__()
-        if coords == None:
+        if coords is None:
             coords = []
         elif not isinstance(coords, list):
             raise VectorException("There should be only a list in the Vector's constructor.")
@@ -67,9 +67,8 @@ class Vector:
 class Vector3D(Vector):
 
     def __init__(self, coords=None):
-        super(Vector3D, self).__init__(coords)
-    
-        if coords == None:
+        super().__init__(coords)  
+        if coords is None:
             coords = [0, 0, 0]
         elif len(coords) < 3:
             raise VectorException("Vector3D is only for 3 dimensinal vectors.")

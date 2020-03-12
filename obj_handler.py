@@ -1,12 +1,8 @@
-
-class ObjParser(object):
+class ObjParser:
 
     VERTEX_PREFIX = "v "
     VERTEX_TEXTURES_PREFIX = "vt "
     FACE_PREFIX = "f "
-
-    def __init__(self):
-        super(ObjParser, self).__init__()
 
     def _parse_vertex(self, line):
         return [float(coord) for coord in line.split()[1:]]
@@ -31,10 +27,10 @@ class ObjParser(object):
         return result
 
 
-class ObjModel(object):
+class ObjModel:
 
     def __init__(self):
-        super(ObjModel, self).__init__()
+        super().__init__()
         self.vertices = []
         self.vertex_textures = []
         self.faces = []
